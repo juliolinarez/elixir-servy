@@ -68,6 +68,14 @@ defmodule Servy.Handler do
     %{conv | status: 200, resp_body: "Teddy, Smokey, Paddington"}
   end
 
+  def route(%{method: "GET", path: "/about.html"} = conv) do
+    File.read("pages/about.html") |> handle_file(conv)
+  end
+
+  def route(%{method: "GET", path: "/bears/new"} = conv) do
+    File.read("pages/form.html") |> handle_file(conv)
+  end
+
   def route(%{method: "GET", path: "/bears/" <> id} = conv) do
     %{conv | status: 200, resp_body: "Bear #{id}"}
   end
@@ -94,6 +102,18 @@ defmodule Servy.Handler do
     Accept: */*
 
     """
+  end
+
+  defp handle_file({:ok, content}, conv) do
+    %{conv | status: 200, resp_body: content}
+  end
+
+  defp handle_file({:error, :enoent}, conv) do
+    %{conv | status: 404, resp_body: "File not found"}
+  end
+
+  defp handle_file({:error, reason}, conv) do
+    %{conv | status: 500, resp_body: "File error: #{reason}"}
   end
 
   defp status_reason(code) do
@@ -188,6 +208,33 @@ IO.puts("==============")
 
 request = """
 GET /bears?id=1 HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts(response)
+IO.puts("==============")
+
+request = """
+GET /about.html HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts(response)
+IO.puts("==============")
+
+
+request = """
+GET /bears/new HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
