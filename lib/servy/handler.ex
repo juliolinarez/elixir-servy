@@ -1,14 +1,17 @@
 defmodule Servy.Handler do
-
   import Servy.Plugins, only: [track: 1, rewrite_path: 1, log: 1, emojify: 1]
+  import Servy.File, only: [handle_file: 2, handle_extension: 1]
+  import Servy.Parser, only: [parse: 1]
+
+  alias Servy.Conv
 
   @moduledoc """
     Handles HTTP requests.
   """
 
- @doc """
-  Transforms a request into a response.
- """
+  @doc """
+   Transforms a request into a response.
+  """
   def handle(request) do
     request
     |> parse
@@ -20,83 +23,46 @@ defmodule Servy.Handler do
     |> format_response
   end
 
-  def parse(request) do
-    [method, path, _] =
-      request
-      |> String.split("\n")
-      |> List.first()
-      |> String.split(" ")
-
-    %{method: method, path: path, resp_body: "", status: nil}
-  end
-
-  def route(%{method: "GET", path: "/wildthings"} = conv) do
+  def route(%Conv{method: "GET", path: "/wildthings"} = conv) do
     %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
-  def route(%{method: "GET", path: "/bears"} = conv) do
+  def route(%Conv{method: "GET", path: "/bears"} = conv) do
     %{conv | status: 200, resp_body: "Teddy, Smokey, Paddington"}
   end
 
-  def route(%{method: "GET", path: "/about.html"} = conv) do
+  def route(%Conv{method: "POST", path: "/bears", params: params} = conv) do
+    %{conv | status: 201, resp_body: params["type"]}
+  end
+
+  def route(%Conv{method: "GET", path: "/about.html"} = conv) do
     File.read("pages/about.html") |> handle_file(conv)
   end
 
-  def route(%{method: "GET", path: "/bears/new"} = conv) do
+  def route(%Conv{method: "GET", path: "/bears/new"} = conv) do
     File.read("pages/form.html") |> handle_file(conv)
   end
 
-  def route(%{method: "GET", path: "/bears/" <> id} = conv) do
+  def route(%Conv{method: "GET", path: "/bears/" <> id} = conv) do
     %{conv | status: 200, resp_body: "Bear #{id}"}
   end
 
-  def route(%{method: "GET", path: "/pages/" <> filename} = conv) do
-    handle_extension(filename) |> File.read |> handle_file(conv)
+  def route(%Conv{method: "GET", path: "/pages/" <> filename} = conv) do
+    handle_extension(filename) |> File.read() |> handle_file(conv)
   end
 
-  def route(%{path: path} = conv) do
+  def route(%Conv{path: path} = conv) do
     %{conv | status: 404, resp_body: "No #{path} here"}
   end
 
-  def format_response(conv) do
+  def format_response(%Conv{} = conv) do
     """
-    HTTP/1.1 #{conv.status} #{status_reason(conv.status)}
+    HTTP/1.1 #{Conv.full_status(conv)}
     Content-Type: text/html
     Content-Length: #{byte_size(conv.resp_body)}
 
     #{conv.resp_body}
     """
-  end
-
-  defp handle_file({:ok, content}, conv) do
-    %{conv | status: 200, resp_body: content}
-  end
-
-  defp handle_file({:error, :enoent}, conv) do
-    %{conv | status: 404, resp_body: "File not found"}
-  end
-
-  defp handle_file({:error, reason}, conv) do
-    %{conv | status: 500, resp_body: "File error: #{reason}"}
-  end
-
-  defp handle_extension(filename) do
-    if Regex.match?(~r/.html$/i, filename) do
-      "pages/#{filename}"
-    else
-      "pages/#{filename}.html"
-    end
-  end
-
-  defp status_reason(code) do
-    %{
-      200 => "OK",
-      201 => "Created",
-      401 => "Unauthorized",
-      403 => "Forbidden",
-      404 => "Not found",
-      500 => "Internal Server Error"
-    }[code]
   end
 end
 
@@ -217,7 +183,6 @@ response = Servy.Handler.handle(request)
 IO.puts(response)
 IO.puts("==============")
 
-
 request = """
 GET /pages/about HTTP/1.1
 Host: example.com
@@ -231,13 +196,28 @@ response = Servy.Handler.handle(request)
 IO.puts(response)
 IO.puts("==============")
 
-
 request = """
 GET /pages/about.html HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
 
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts(response)
+IO.puts("==============")
+
+request = """
+POST /bears HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 21
+
+name=Baloo&type=Brown
 """
 
 response = Servy.Handler.handle(request)
