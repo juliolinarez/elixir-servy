@@ -1,6 +1,14 @@
-require Logger
-
 defmodule Servy.Handler do
+
+  import Servy.Plugins, only: [track: 1, rewrite_path: 1, log: 1, emojify: 1]
+
+  @moduledoc """
+    Handles HTTP requests.
+  """
+
+ @doc """
+  Transforms a request into a response.
+ """
   def handle(request) do
     request
     |> parse
@@ -10,44 +18,6 @@ defmodule Servy.Handler do
     |> emojify
     |> track
     |> format_response
-  end
-
-  def emojify(%{status: 200, resp_body: resp} = conv) do
-    %{conv | resp_body: "🎉 #{resp} 🎉"}
-  end
-
-  def emojify(conv), do: conv
-
-  def track(%{status: 404, path: path} = conv) do
-    Logger.warning("Warning: #{path} is on the loose")
-    conv
-  end
-
-  def track(conv), do: conv
-
-  def rewrite_path(%{path: "/wildlife"} = conv) do
-    Logger.info("Redirected from #{conv.path} to /wildthings")
-
-    %{conv | path: "/wildthings"}
-  end
-
-  def rewrite_path(%{path: path} = conv) do
-    regex = ~r{\/(?<thing>\w+)\?id=(?<id>\d+)}
-    captures = Regex.named_captures(regex, path)
-    rewrite_path_captures(conv, captures)
-  end
-
-  def rewrite_path(conv), do: conv
-
-  defp rewrite_path_captures(conv, %{"thing" => thing, "id" => id}) do
-    %{conv | path: "/#{thing}/#{id}"}
-  end
-
-  defp rewrite_path_captures(conv, nil), do: conv
-
-  def log(conv) do
-    Logger.info(conv)
-    conv
   end
 
   def parse(request) do
@@ -80,6 +50,10 @@ defmodule Servy.Handler do
     %{conv | status: 200, resp_body: "Bear #{id}"}
   end
 
+  def route(%{method: "GET", path: "/pages/" <> filename} = conv) do
+    handle_extension(filename) |> File.read |> handle_file(conv)
+  end
+
   def route(%{path: path} = conv) do
     %{conv | status: 404, resp_body: "No #{path} here"}
   end
@@ -94,16 +68,6 @@ defmodule Servy.Handler do
     """
   end
 
-  def test_req(url) do
-    """
-    GET #{url} HTTP/1.1
-    Host: example.com
-    User-Agent: ExampleBrowser/1.0
-    Accept: */*
-
-    """
-  end
-
   defp handle_file({:ok, content}, conv) do
     %{conv | status: 200, resp_body: content}
   end
@@ -114,6 +78,14 @@ defmodule Servy.Handler do
 
   defp handle_file({:error, reason}, conv) do
     %{conv | status: 500, resp_body: "File error: #{reason}"}
+  end
+
+  defp handle_extension(filename) do
+    if Regex.match?(~r/.html$/i, filename) do
+      "pages/#{filename}"
+    else
+      "pages/#{filename}.html"
+    end
   end
 
   defp status_reason(code) do
@@ -232,9 +204,36 @@ response = Servy.Handler.handle(request)
 IO.puts(response)
 IO.puts("==============")
 
-
 request = """
 GET /bears/new HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts(response)
+IO.puts("==============")
+
+
+request = """
+GET /pages/about HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts(response)
+IO.puts("==============")
+
+
+request = """
+GET /pages/about.html HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
