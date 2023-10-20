@@ -4,7 +4,7 @@ defmodule Servy.Handler do
   import Servy.Parser, only: [parse: 1]
 
   alias Servy.Conv
-  # alias Servy.BearController
+  alias Servy.BearController
 
   @moduledoc """
     Handles HTTP requests.
@@ -29,11 +29,11 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/bears"} = conv) do
-    %{conv | status: 200, resp_body: "Teddy, Smokey, Paddington"}
+    BearController.index(conv)
   end
 
   def route(%Conv{method: "POST", path: "/bears", params: params} = conv) do
-    %{conv | status: 201, resp_body: params["type"]}
+    BearController.create(conv, params)
   end
 
   def route(%Conv{method: "GET", path: "/about.html"} = conv) do
@@ -45,7 +45,8 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/bears/" <> id} = conv) do
-    %{conv | status: 200, resp_body: "Bear #{id}"}
+    Map.put(conv.params, "id", id)
+    BearController.show(conv, conv.params)
   end
 
   def route(%Conv{method: "GET", path: "/pages/" <> filename} = conv) do
@@ -79,16 +80,6 @@ end
 
 # IO.puts(response)
 # IO.puts("==============")
-
-# request = """
-# GET /bears HTTP/1.1
-# Host: example.com
-# User-Agent: ExampleBrowser/1.0
-# Accept: */*
-
-# """
-
-# response = Servy.Handler.handle(request)
 
 # IO.puts(response)
 # IO.puts("==============")
@@ -145,18 +136,18 @@ end
 # IO.puts(response)
 # IO.puts("==============")
 
-# request = """
-# GET /bears?id=1 HTTP/1.1
-# Host: example.com
-# User-Agent: ExampleBrowser/1.0
-# Accept: */*
+request = """
+GET /bears?id=1 HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
 
-# """
+"""
 
-# response = Servy.Handler.handle(request)
+response = Servy.Handler.handle(request)
 
-# IO.puts(response)
-# IO.puts("==============")
+IO.puts(response)
+IO.puts("==============")
 
 request = """
 GET /about.html HTTP/1.1
@@ -223,5 +214,17 @@ name=Baloo&type=Brown
 
 response = Servy.Handler.handle(request)
 
+IO.puts(response)
+IO.puts("==============")
+
+request = """
+GET /bears HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
 IO.puts(response)
 IO.puts("==============")
