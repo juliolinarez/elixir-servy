@@ -3,23 +3,28 @@ defmodule Servy.BearController do
   alias Servy.Conv
   alias Servy.Bear
 
-  def index(%Conv{} = conv) do
-    items =
-      Wildthings.list_bears()
-      |> Enum.filter(&Bear.is_hibernating/1)
-      |> Enum.map(&bear_item/1)
-      |> Enum.join()
+  @templates_path Path.expand("../../templates", __DIR__)
 
-    %{conv | status: 200, resp_body: "<ul> #{items} </ul>"}
+  def render(conv, template, bindings \\ []) do
+    content =
+      @templates_path
+      |> Path.join(template)
+      |> EEx.eval_file(bindings)
+
+    %{conv | status: 200, resp_body: content}
   end
 
-  defp bear_item(bear) do
-    "<li>Name: #{bear.name} Type: #{bear.type} </li>"
+  def index(%Conv{} = conv) do
+    bears =
+      Wildthings.list_bears()
+      |> Enum.filter(&Bear.is_hibernating/1)
+
+    render(conv, "index.eex", bears: bears)
   end
 
   def show(%Conv{} = conv, %{"id" => id}) do
     bear = Wildthings.get_bear(id)
-    %{conv | status: 200, resp_body: "Bear #{id} name #{bear.name} type #{bear.type}"}
+    render(conv, "show.eex", bear: bear)
   end
 
   def show(%Conv{} = conv, _) do
