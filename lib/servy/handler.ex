@@ -5,7 +5,6 @@ defmodule Servy.Handler do
 
   alias Servy.Conv
   alias Servy.BearController
-  import IEx
 
   @moduledoc """
     Handles HTTP requests.
@@ -35,7 +34,6 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/bears"} = conv) do
-    IEx.pry()
     BearController.index(conv)
   end
 
