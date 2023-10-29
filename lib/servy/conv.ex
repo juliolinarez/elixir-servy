@@ -3,6 +3,7 @@ defmodule Servy.Conv do
             path: "",
             headers: %{},
             resp_body: "",
+            resp_content_type: "text/html",
             status: nil,
             params: %{}
 

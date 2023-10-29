@@ -6,6 +6,7 @@ defmodule Servy.Handler do
   alias Servy.Conv
   alias Servy.BearController
 
+
   @moduledoc """
     Handles HTTP requests.
   """
@@ -36,6 +37,10 @@ defmodule Servy.Handler do
     BearController.index(conv)
   end
 
+  def route(%Conv{method: "GET", path: "/api/bears"} = conv) do
+    Servy.Api.BearController.index(conv)
+  end
+
   def route(%Conv{method: "POST", path: "/bears", params: params} = conv) do
     BearController.create(conv, params)
   end
@@ -59,7 +64,7 @@ defmodule Servy.Handler do
   def format_response(%Conv{} = conv) do
     """
     HTTP/1.1 #{Conv.full_status(conv)}\r
-    Content-Type: text/html\r
+    Content-Type: #{conv.resp_content_type}\r
     Content-Length: #{String.length(conv.resp_body)}\r
     \r
     #{conv.resp_body}
