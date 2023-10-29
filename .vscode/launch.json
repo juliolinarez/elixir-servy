@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "type": "mix_task",
+      "name": "mix test",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": [],
+      "startApps": true,
+      "projectDir": "${workspaceRoot}",
+      "requireFiles": ["test/**/test_helper.exs", "test/**/*_test.exs"]
+    },
+    {
+      "type": "mix_task",
+      "name": "mix test current file",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": [
+        "${relativeFile}"
+      ],
+      "startApps": true,
+      "exitAfterTaskReturns": false,
+      "projectDir": "${workspaceRoot}",
+      "requireFiles": [
+        "test/**/test_helper.exs",
+        "${relativeFile}"
+      ]
+    },
+    {
+      "type": "mix_task",
+      "name": "mix test current line number",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": [
+        "${relativeFile}:${lineNumber}"
+      ],
+      "startApps": true,
+      "projectDir": "${workspaceRoot}",
+      "requireFiles": [
+        "test/**/test_helper.exs",
+        "${relativeFile}"
+      ]
+    }
+  ]
+}

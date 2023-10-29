@@ -4,7 +4,7 @@ defmodule Servy.BearController do
   alias Servy.Conv
   alias Servy.Bear
 
-  @templates_path Path.expand("../../templates", __DIR__)
+  # @templates_path Path.expand("../../templates", __DIR__)
 
   # def render(conv, template, bindings \\ []) do
   #   content =
@@ -18,7 +18,7 @@ defmodule Servy.BearController do
   def index(%Conv{} = conv) do
     bears =
       Wildthings.list_bears()
-      |> Enum.filter(&Bear.is_hibernating/1)
+      |> Enum.sort(&Bear.order_asc_by_name/2)
 
     # render(conv, "index.eex", bears: bears)
     %{ conv | status: 200, resp_body: BearView.index(bears) }
@@ -31,10 +31,10 @@ defmodule Servy.BearController do
   end
 
   def show(%Conv{} = conv, _) do
-    %{conv | status: 404, resp_body: "Not found"}
+    %{conv | status: 404, resp_body: "Not Found"}
   end
 
   def create(%Conv{} = conv, %{"name" => name, "type" => type}) do
-    %{conv | status: 201, resp_body: "Bear name: #{name} type: #{type}"}
+    %{conv | status: 201, resp_body: "Created a #{type} bear named #{name}!"}
   end
 end
