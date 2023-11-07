@@ -29,7 +29,7 @@ defmodule Servy.Handler do
     # |> emojify
     |> track
     |> format_response
-  end
+end
 
   def route(%Conv{method: "GET", path: "/sensors"} = conv) do
     parent = self()
@@ -47,6 +47,14 @@ defmodule Servy.Handler do
 
     %{conv | status: 200, resp_body: inspect({snapshots, where_is_bigfoot})}
 
+  end
+
+  def route(%Conv{method: "POST", path: "/pledges"} = conv) do
+    Servy.PledgeController.create(conv, conv.params)
+  end
+
+  def route(%Conv{method: "GET", path: "/pledges"} = conv) do
+    Servy.PledgeController.index(conv)
   end
 
   def route(%Conv{method: "GET", path: "/hibernate/" <> time} = conv) do
