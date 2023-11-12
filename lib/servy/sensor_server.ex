@@ -8,9 +8,11 @@ defmodule Servy.SensorServer do
 
   # Client Interface
 
-  def start_link(%{interval: interval} = args) do
+  def start_link(options) do
+    interval = Keyword.get(options, :interval)
     IO.puts "Starting the sensor server with #{interval} min..."
-    GenServer.start_link(__MODULE__, args, name: @name)
+    state = Enum.into(options, %{})
+    GenServer.start_link(__MODULE__, state, name: @name)
   end
 
   def get_sensor_data do
